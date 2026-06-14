@@ -1,0 +1,59 @@
+Question: What is the maximum sale a store did and which year, month and day
+────────────────────────────────────────────────────────────
+SQL:
+SELECT TOP 1
+    T.Store,
+    T.Sales AS MaxSaleAmount,
+    YEAR(T.Date) AS SaleYear,
+    MONTH(T.Date) AS SaleMonth,
+    DAY(T.Date) AS SaleDay
+FROM
+    dbo.Train AS T
+WHERE
+    T.[Open] = 1
+ORDER BY
+    T.Sales DESC;
+
+Rows returned: 1
+[
+  {
+    "Store": 909,
+    "MaxSaleAmount": 41551.0,
+    "SaleYear": 2015,
+    "SaleMonth": 6,
+    "SaleDay": 22
+  }
+]
+
+Answer:
+The maximum sale amount recorded was 41551.0. This occurred on 22 of month 6 in year 2015.
+
+
+
+
+Question: Which store never participated in promo and had school holiday but did maximum sales
+────────────────────────────────────────────────────────────
+SQL:
+SELECT TOP 1 T_sales.Store
+FROM (
+    SELECT
+        T.Store,
+        SUM(CASE WHEN T.[Open] = 1 THEN T.Sales ELSE 0 END) AS TotalSales
+    FROM dbo.Train T
+    WHERE T.Store IN (
+        -- Identify stores that never participated in promo AND had a school holiday
+        SELECT DISTINCT T_inner.Store
+        FROM dbo.Train T_inner
+        WHERE T_inner.SchoolHoliday = '1'
+          AND NOT EXISTS (
+            SELECT 1 FROM dbo.Train T2 WHERE T2.Store = T_inner.Store AND T2.Promo = 1
+          )
+    )
+    GROUP BY T.Store
+) AS T_sales
+ORDER BY T_sales.TotalSales DESC;
+
+Rows returned: 0
+
+Answer:
+The provided data does not show any store that meets all criteria: having a school holiday, never participating in a promo, and achieving maximum sales among the qualifying stores.
