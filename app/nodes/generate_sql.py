@@ -1,6 +1,5 @@
-from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage
-from app import config
+from app.llm import get_llm
 from app.schema import SCHEMA_CONTEXT
 from app.graph_state import AgentState
 
@@ -16,7 +15,7 @@ Rules:
 - Use TOP 100 when retrieving row samples; omit TOP for aggregations.
 - All string literals use single quotes."""
 
-_llm = ChatOllama(base_url=config.OLLAMA_BASE_URL, model=config.OLLAMA_MODEL, temperature=0)
+_llm = get_llm()
 
 
 def generate_sql(state: AgentState) -> dict:

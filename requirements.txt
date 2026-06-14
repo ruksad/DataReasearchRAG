@@ -1,7 +1,11 @@
 langgraph>=1.2
 langchain>=1.3
-langchain-ollama>=0.2
 langchain-core>=1.4
 sqlalchemy>=2.0
 pymssql>=2.3
 python-dotenv>=1.0
+
+# LLM providers — install the one(s) you need
+langchain-ollama>=0.2
+langchain-anthropic>=0.3
+langchain-openai>=0.3

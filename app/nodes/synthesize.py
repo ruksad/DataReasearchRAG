@@ -1,7 +1,6 @@
 import json
-from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage
-from app import config
+from app.llm import get_llm
 from app.graph_state import AgentState
 
 _SYSTEM = """You are a data analyst writing a concise insight for a business director.
@@ -13,7 +12,7 @@ Rules:
 - If the rows don't answer the question, say so plainly.
 - Do not repeat the SQL in your answer."""
 
-_llm = ChatOllama(base_url=config.OLLAMA_BASE_URL, model=config.OLLAMA_MODEL, temperature=0)
+_llm = get_llm()
 
 
 def synthesize(state: AgentState) -> dict:
