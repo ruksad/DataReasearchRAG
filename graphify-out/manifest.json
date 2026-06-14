@@ -1,0 +1,32 @@
+{
+  "/Users/mruksad/Documents/learn/Text-to-SQL_RAG/rossmann-store-sales/init/init.sh": {
+    "mtime": 1781397816.4300656,
+    "ast_hash": "4912db971ce815fedc1ae2dc42396235",
+    "semantic_hash": "4912db971ce815fedc1ae2dc42396235"
+  },
+  "/Users/mruksad/Documents/learn/Text-to-SQL_RAG/rossmann-store-sales/init/load_rossmann.sql": {
+    "mtime": 1781398305.730193,
+    "ast_hash": "bdc9d60bca4825c3f4b9f90d0bea9cde",
+    "semantic_hash": "bdc9d60bca4825c3f4b9f90d0bea9cde"
+  },
+  "/Users/mruksad/Documents/learn/Text-to-SQL_RAG/MVP_Architecture_Conversational_Analytics.md": {
+    "mtime": 1781416901.083056,
+    "ast_hash": "14e57780baa69d2136d77e442b017fc8",
+    "semantic_hash": "14e57780baa69d2136d77e442b017fc8"
+  },
+  "/Users/mruksad/Documents/learn/Text-to-SQL_RAG/notes.md": {
+    "mtime": 1781399133.7865648,
+    "ast_hash": "8c2eee0c52a9c1dead0a84b4dab3f4d8",
+    "semantic_hash": "8c2eee0c52a9c1dead0a84b4dab3f4d8"
+  },
+  "/Users/mruksad/Documents/learn/Text-to-SQL_RAG/rossmann-store-sales/EDA_Insights.md": {
+    "mtime": 1781400744.4027143,
+    "ast_hash": "c3e770393c9dc617b22666ef6828675d",
+    "semantic_hash": "c3e770393c9dc617b22666ef6828675d"
+  },
+  "/Users/mruksad/Documents/learn/Text-to-SQL_RAG/rossmann-store-sales/docker-compose.yml": {
+    "mtime": 1781399133.7831335,
+    "ast_hash": "1b22043c323e23818be4b6a91efbddd2",
+    "semantic_hash": "1b22043c323e23818be4b6a91efbddd2"
+  }
+}
