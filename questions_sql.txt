@@ -57,3 +57,27 @@ Rows returned: 0
 
 Answer:
 The provided data does not show any store that meets all criteria: having a school holiday, never participating in a promo, and achieving maximum sales among the qualifying stores.
+
+
+Question: Which store never participated in promo and had school holiday but did maximum sales
+────────────────────────────────────────────────────────────
+SQL:
+SELECT TOP 1 t.Store, MAX(t.Sales) AS MaxSales
+FROM dbo.Train t
+JOIN dbo.Store s ON t.Store = s.Store
+WHERE t.[Open] = 1
+  AND t.Promo = 0
+  AND t.SchoolHoliday = 1
+GROUP BY t.Store
+ORDER BY MaxSales DESC
+
+Rows returned: 1
+[
+  {
+    "Store": 262,
+    "MaxSales": 38367.0
+  }
+]
+
+Answer:
+Store 262 never participated in a promotion, had a school holiday, and achieved the maximum sales of 38,367.

@@ -9,3 +9,8 @@ python-dotenv>=1.0
 langchain-ollama>=0.2
 langchain-anthropic>=0.3
 langchain-openai>=0.3
+
+
+#vanna for qureis
+vanna>=0.7
+chromadb>=0.5
