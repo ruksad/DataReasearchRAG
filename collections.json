@@ -1,0 +1,544 @@
+{
+  "getCollectionById": [
+    {
+      "document": "ddl",
+      "curl": "curl --location 'http://localhost:8001/api/v2/tenants/default_tenant/databases/default_database/collections/ec822c45-c9f4-4e5d-a8ad-6f5a42784b1a/get' \\\n--header 'Content-Type: application/json' \\\n--data '{\"include\": [\"documents\", \"metadatas\"]}'",
+      "response": {
+        "ids": [
+          "474b1640-37ac-5c11-9c8c-4a2074f54ffb-ddl"
+        ],
+        "embeddings": null,
+        "documents": [
+          "-- Rossmann database schema (MS SQL Server)\n\nCREATE TABLE dbo.Store (\n    Store                    INT          NOT NULL PRIMARY KEY,\n    StoreType                VARCHAR(10)  NULL,  -- 'a', 'b', 'c', 'd'\n    Assortment               VARCHAR(10)  NULL,  -- 'a'=basic, 'b'=extra, 'c'=extended\n    CompetitionDistance      FLOAT        NULL,  -- metres to nearest competitor\n    CompetitionOpenSinceMonth INT         NULL,\n    CompetitionOpenSinceYear  INT         NULL,\n    Promo2                   INT          NULL,  -- 0=not participating, 1=participating\n    Promo2SinceWeek          INT          NULL,\n    Promo2SinceYear          INT          NULL,\n    PromoInterval            VARCHAR(50)  NULL   -- months Promo2 restarts e.g. 'Feb,May,Aug,Nov'\n);\n\nCREATE TABLE dbo.Train (\n    Store        INT          NOT NULL,  -- FK to dbo.Store.Store\n    DayOfWeek    INT          NULL,      -- 1=Monday, 2=Tuesday, ..., 7=Sunday\n    [Date]       DATE         NULL,\n    Sales        FLOAT        NULL,      -- daily turnover; always 0 when [Open]=0\n    Customers    FLOAT        NULL,      -- number of customers that day\n    [Open]       INT          NULL,      -- 0=closed, 1=open  (reserved keyword: always bracket as [Open])\n    Promo        INT          NULL,      -- 1=promotion running, 0=no promotion\n    StateHoliday VARCHAR(10)  NULL,      -- 'a'=public holiday, 'b'=Easter, 'c'=Christmas, '0'=none\n    SchoolHoliday INT         NULL       -- 1=affected by school closure, 0=not\n);\n\n-- Join key\n-- dbo.Train.Store = dbo.Store.Store\n"
+        ],
+        "uris": null,
+        "metadatas": [
+          null
+        ],
+        "include": [
+          "documents",
+          "metadatas"
+        ]
+      }
+    },
+    {
+      "document": "sql",
+      "curl": "curl --location 'http://localhost:8001/api/v2/tenants/default_tenant/databases/default_database/collections/7b2776cf-fe05-47c4-874a-5ddb6f4c4324/get' \\\n--header 'Content-Type: application/json' \\\n--data '{\"include\": [\"documents\", \"metadatas\"]}'",
+      "response": {
+        "ids": [
+          "9c6282b4-b427-5dc9-82c3-9318fce0d7aa-sql",
+          "35a118f9-4d6a-5b20-bd5b-b625f7f4118f-sql",
+          "45a34913-476d-578e-97b5-3483995ce350-sql",
+          "f6104fdc-4c5c-565f-92a4-e85cff0afce9-sql",
+          "2a3f25d4-c86c-5117-be61-27be0539adc9-sql",
+          "cdd30244-5ecb-5a41-aa80-9a179ceb60c7-sql",
+          "43c8e3d0-9d56-5b61-8b48-adeda25a286c-sql",
+          "e5455d3b-9020-5064-b59f-56641eb86072-sql",
+          "60a0e424-1614-594d-90c2-08e4f917c5d5-sql",
+          "873336f9-9ad7-5759-9e7b-2b819559509a-sql",
+          "f906f67e-40ec-5b97-9689-b3b1e92aeb7e-sql",
+          "38809759-187e-51e7-b52f-fc63057d948f-sql",
+          "7513eaaf-73c2-5bf5-b413-4f85add3d54f-sql",
+          "1001e36f-8df6-5228-b9ab-6a404eab6cbc-sql",
+          "1ce96c4d-f1dc-5c2f-917c-e8280b6fb5e7-sql",
+          "a8f675c9-2664-54d2-a14a-15874a737da0-sql",
+          "534580f3-a5b0-5e99-8030-d33ad9490ecb-sql",
+          "0e583784-d7cf-55ed-925c-ba8b1c227993-sql",
+          "33b9666d-ea53-5018-84da-c5bfa1b4f283-sql",
+          "21daf2e6-8544-565c-b4ce-758f295fda32-sql"
+        ],
+        "embeddings": null,
+        "documents": [
+          "{\"question\": \"Top 5 stores by total sales\", \"sql\": \"SELECT TOP 5 Store, SUM(Sales) AS TotalSales FROM dbo.Train WHERE [Open] = 1 GROUP BY Store ORDER BY TotalSales DESC\"}",
+          "{\"question\": \"Average sales by day of week\", \"sql\": \"SELECT DayOfWeek, AVG(Sales) AS AvgSales FROM dbo.Train WHERE [Open] = 1 GROUP BY DayOfWeek ORDER BY DayOfWeek\"}",
+          "{\"question\": \"Which day of the week has the highest average sales?\", \"sql\": \"SELECT TOP 1 DayOfWeek, AVG(Sales) AS AvgSales FROM dbo.Train WHERE [Open] = 1 GROUP BY DayOfWeek ORDER BY AvgSales DESC\"}",
+          "{\"question\": \"How does promotion affect average sales?\", \"sql\": \"SELECT Promo, AVG(Sales) AS AvgSales, COUNT(*) AS Days FROM dbo.Train WHERE [Open] = 1 GROUP BY Promo ORDER BY Promo\"}",
+          "{\"question\": \"Average sales by store type\", \"sql\": \"SELECT s.StoreType, AVG(t.Sales) AS AvgSales FROM dbo.Train t JOIN dbo.Store s ON t.Store = s.Store WHERE t.[Open] = 1 GROUP BY s.StoreType ORDER BY AvgSales DESC\"}",
+          "{\"question\": \"Average sales by assortment type\", \"sql\": \"SELECT s.Assortment, AVG(t.Sales) AS AvgSales FROM dbo.Train t JOIN dbo.Store s ON t.Store = s.Store WHERE t.[Open] = 1 GROUP BY s.Assortment ORDER BY AvgSales DESC\"}",
+          "{\"question\": \"Monthly total sales trend\", \"sql\": \"SELECT YEAR([Date]) AS Year, MONTH([Date]) AS Month, SUM(Sales) AS TotalSales FROM dbo.Train WHERE [Open] = 1 GROUP BY YEAR([Date]), MONTH([Date]) ORDER BY Year, Month\"}",
+          "{\"question\": \"Which stores have the most promo days?\", \"sql\": \"SELECT TOP 10 Store, SUM(Promo) AS PromoDays FROM dbo.Train GROUP BY Store ORDER BY PromoDays DESC\"}",
+          "{\"question\": \"Average sales on promo vs non-promo days by store type\", \"sql\": \"SELECT s.StoreType, t.Promo, AVG(t.Sales) AS AvgSales FROM dbo.Train t JOIN dbo.Store s ON t.Store = s.Store WHERE t.[Open] = 1 GROUP BY s.StoreType, t.Promo ORDER BY s.StoreType, t.Promo\"}",
+          "{\"question\": \"How many stores are enrolled in Promo2?\", \"sql\": \"SELECT Promo2, COUNT(*) AS StoreCount FROM dbo.Store GROUP BY Promo2\"}",
+          "{\"question\": \"Sales on public holidays vs normal days\", \"sql\": \"SELECT StateHoliday, AVG(Sales) AS AvgSales, COUNT(*) AS Days FROM dbo.Train WHERE [Open] = 1 GROUP BY StateHoliday ORDER BY StateHoliday\"}",
+          "{\"question\": \"Effect of school holidays on sales\", \"sql\": \"SELECT SchoolHoliday, AVG(Sales) AS AvgSales, COUNT(*) AS Days FROM dbo.Train WHERE [Open] = 1 GROUP BY SchoolHoliday\"}",
+          "{\"question\": \"Top 10 stores by average daily sales\", \"sql\": \"SELECT TOP 10 Store, AVG(Sales) AS AvgDailySales FROM dbo.Train WHERE [Open] = 1 GROUP BY Store ORDER BY AvgDailySales DESC\"}",
+          "{\"question\": \"Total sales per year\", \"sql\": \"SELECT YEAR([Date]) AS Year, SUM(Sales) AS TotalSales FROM dbo.Train WHERE [Open] = 1 GROUP BY YEAR([Date]) ORDER BY Year\"}",
+          "{\"question\": \"How does competition distance relate to average sales?\", \"sql\": \"SELECT CASE WHEN s.CompetitionDistance < 500 THEN 'Under 500m' WHEN s.CompetitionDistance < 2000 THEN '500m-2km' WHEN s.CompetitionDistance < 5000 THEN '2km-5km' ELSE 'Over 5km' END AS DistanceBand, AVG(t.Sales) AS AvgSales, COUNT(DISTINCT t.Store) AS Stores FROM dbo.Train t JOIN dbo.Store s ON t.Store = s.Store WHERE t.[Open] = 1 AND s.CompetitionDistance IS NOT NULL GROUP BY CASE WHEN s.CompetitionDistance < 500 THEN 'Under 500m' WHEN s.CompetitionDistance < 2000 THEN '500m-2km' WHEN s.CompetitionDistance < 5000 THEN '2km-5km' ELSE 'Over 5km' END ORDER BY AvgSales DESC\"}",
+          "{\"question\": \"Average sales on weekends vs weekdays\", \"sql\": \"SELECT CASE WHEN DayOfWeek IN (6,7) THEN 'Weekend' ELSE 'Weekday' END AS DayType, AVG(Sales) AS AvgSales FROM dbo.Train WHERE [Open] = 1 GROUP BY CASE WHEN DayOfWeek IN (6,7) THEN 'Weekend' ELSE 'Weekday' END\"}",
+          "{\"question\": \"Which month has the highest total sales?\", \"sql\": \"SELECT TOP 1 MONTH([Date]) AS Month, SUM(Sales) AS TotalSales FROM dbo.Train WHERE [Open] = 1 GROUP BY MONTH([Date]) ORDER BY TotalSales DESC\"}",
+          "{\"question\": \"Sales trend for store 262 over time\", \"sql\": \"SELECT YEAR([Date]) AS Year, MONTH([Date]) AS Month, SUM(Sales) AS TotalSales FROM dbo.Train WHERE Store = 262 AND [Open] = 1 GROUP BY YEAR([Date]), MONTH([Date]) ORDER BY Year, Month\"}",
+          "{\"question\": \"How many days was each store open?\", \"sql\": \"SELECT TOP 20 Store, SUM([Open]) AS OpenDays FROM dbo.Train GROUP BY Store ORDER BY OpenDays DESC\"}",
+          "{\"question\": \"Stores with Promo2 and their average sales vs stores without\", \"sql\": \"SELECT s.Promo2, AVG(t.Sales) AS AvgSales, COUNT(DISTINCT t.Store) AS StoreCount FROM dbo.Train t JOIN dbo.Store s ON t.Store = s.Store WHERE t.[Open] = 1 GROUP BY s.Promo2\"}"
+        ],
+        "uris": null,
+        "metadatas": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "include": [
+          "documents",
+          "metadatas"
+        ]
+      }
+    },
+    {"document": "documentation",
+    "curl": "",
+    "response": {
+    "ids": [
+        "66d64928-7382-598f-a62f-3e408fa3d7e9-doc"
+    ],
+    "embeddings": null,
+    "documents": [
+        "# Rossmann Business Glossary\n\n## Key rules\n- ALWAYS bracket `[Open]` and `[Date]` in SQL — they are reserved keywords in T-SQL.\n- Filter `[Open] = 1` on any Sales aggregation to exclude closed-day zeros.\n- Use `dbo.Train` for time-series sales data; use `dbo.Store` for store metadata. Join on `Store`.\n\n## Term definitions\n\n**open day** — a row in dbo.Train where `[Open] = 1`. Always filter these when computing Sales metrics.\n\n**revenue / total sales** — `SUM(Sales)` on open days: `SUM(Sales) WHERE [Open] = 1`\n\n**average sales** — `AVG(Sales)` on open days: `AVG(Sales) WHERE [Open] = 1`\n\n**promo day** — a row where `Promo = 1` (daily promotion running that day).\n\n**non-promo day** — a row where `Promo = 0`.\n\n**promo lift** — difference in average Sales between promo days and non-promo days.\n\n**active Promo2** — a store enrolled in Promo2 (`Promo2 = 1`) and the current month appears in its `PromoInterval` column. PromoInterval is a comma-separated string like `'Feb,May,Aug,Nov'`.\n\n**store type B** — `StoreType = 'b'`. Largest format stores; historically highest average sales.\n\n**extended assortment** — `Assortment = 'c'`. Broadest product range; highest average sales vs basic ('a') and extra ('b').\n\n**peak day of week** — the `DayOfWeek` value with the highest `AVG(Sales)` on open days. DayOfWeek 1=Monday … 7=Sunday.\n\n**weekend** — `DayOfWeek IN (6, 7)` (Saturday and Sunday).\n\n**Christmas period** — `StateHoliday = 'c'`.\n\n**public holiday** — `StateHoliday = 'a'`.\n\n**school holiday** — `SchoolHoliday = 1`.\n\n**competition open months** — derived as `(YEAR([Date]) - CompetitionOpenSinceYear) * 12 + (MONTH([Date]) - CompetitionOpenSinceMonth)`. Measures how long a competitor has been open relative to each sales row.\n\n**close competitor** — `CompetitionDistance < 500` (less than 500 metres away).\n"
+    ],
+    "uris": null,
+    "metadatas": [
+        null
+    ],
+    "include": [
+        "documents",
+        "metadatas"
+    ]
+}}
+  ],
+  "collections": [
+    {
+      "id": "6b851e67-11df-4325-b62e-69bb33701df2",
+      "name": "documentation",
+      "configuration_json": {
+        "hnsw": {
+          "space": "l2",
+          "ef_construction": 100,
+          "ef_search": 100,
+          "max_neighbors": 16,
+          "resize_factor": 1.2,
+          "sync_threshold": 1000
+        },
+        "spann": null,
+        "embedding_function": {
+          "type": "known",
+          "name": "default",
+          "config": {
+          }
+        }
+      },
+      "schema": {
+        "defaults": {
+          "string": {
+            "fts_index": {
+              "enabled": false,
+              "config": {
+              }
+            },
+            "string_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          },
+          "float_list": {
+            "vector_index": {
+              "enabled": false,
+              "config": {
+                "space": "l2",
+                "embedding_function": {
+                  "type": "known",
+                  "name": "default",
+                  "config": {
+                  }
+                },
+                "hnsw": {
+                  "ef_construction": 100,
+                  "max_neighbors": 16,
+                  "ef_search": 100,
+                  "num_threads": 14,
+                  "batch_size": 100,
+                  "sync_threshold": 1000,
+                  "resize_factor": 1.2
+                }
+              }
+            }
+          },
+          "sparse_vector": {
+            "sparse_vector_index": {
+              "enabled": false,
+              "config": {
+                "embedding_function": {
+                  "type": "unknown"
+                },
+                "bm25": false
+              }
+            }
+          },
+          "int": {
+            "int_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          },
+          "float": {
+            "float_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          },
+          "bool": {
+            "bool_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          }
+        },
+        "keys": {
+          "#embedding": {
+            "float_list": {
+              "vector_index": {
+                "enabled": true,
+                "config": {
+                  "space": "l2",
+                  "embedding_function": {
+                    "type": "known",
+                    "name": "default",
+                    "config": {
+                    }
+                  },
+                  "source_key": "#document",
+                  "hnsw": {
+                    "ef_construction": 100,
+                    "max_neighbors": 16,
+                    "ef_search": 100,
+                    "num_threads": 14,
+                    "batch_size": 100,
+                    "sync_threshold": 1000,
+                    "resize_factor": 1.2
+                  }
+                }
+              }
+            }
+          },
+          "#document": {
+            "string": {
+              "fts_index": {
+                "enabled": true,
+                "config": {
+                }
+              },
+              "string_inverted_index": {
+                "enabled": false,
+                "config": {
+                }
+              }
+            }
+          }
+        }
+      },
+      "metadata": null,
+      "dimension": 384,
+      "tenant": "default_tenant",
+      "database": "default_database",
+      "log_position": 0,
+      "version": 0
+    },
+    {
+      "id": "7b2776cf-fe05-47c4-874a-5ddb6f4c4324",
+      "name": "sql",
+      "configuration_json": {
+        "hnsw": {
+          "space": "l2",
+          "ef_construction": 100,
+          "ef_search": 100,
+          "max_neighbors": 16,
+          "resize_factor": 1.2,
+          "sync_threshold": 1000
+        },
+        "spann": null,
+        "embedding_function": {
+          "type": "known",
+          "name": "default",
+          "config": {
+          }
+        }
+      },
+      "schema": {
+        "defaults": {
+          "string": {
+            "fts_index": {
+              "enabled": false,
+              "config": {
+              }
+            },
+            "string_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          },
+          "float_list": {
+            "vector_index": {
+              "enabled": false,
+              "config": {
+                "space": "l2",
+                "embedding_function": {
+                  "type": "known",
+                  "name": "default",
+                  "config": {
+                  }
+                },
+                "hnsw": {
+                  "ef_construction": 100,
+                  "max_neighbors": 16,
+                  "ef_search": 100,
+                  "num_threads": 14,
+                  "batch_size": 100,
+                  "sync_threshold": 1000,
+                  "resize_factor": 1.2
+                }
+              }
+            }
+          },
+          "sparse_vector": {
+            "sparse_vector_index": {
+              "enabled": false,
+              "config": {
+                "embedding_function": {
+                  "type": "unknown"
+                },
+                "bm25": false
+              }
+            }
+          },
+          "int": {
+            "int_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          },
+          "float": {
+            "float_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          },
+          "bool": {
+            "bool_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          }
+        },
+        "keys": {
+          "#document": {
+            "string": {
+              "fts_index": {
+                "enabled": true,
+                "config": {
+                }
+              },
+              "string_inverted_index": {
+                "enabled": false,
+                "config": {
+                }
+              }
+            }
+          },
+          "#embedding": {
+            "float_list": {
+              "vector_index": {
+                "enabled": true,
+                "config": {
+                  "space": "l2",
+                  "embedding_function": {
+                    "type": "known",
+                    "name": "default",
+                    "config": {
+                    }
+                  },
+                  "source_key": "#document",
+                  "hnsw": {
+                    "ef_construction": 100,
+                    "max_neighbors": 16,
+                    "ef_search": 100,
+                    "num_threads": 14,
+                    "batch_size": 100,
+                    "sync_threshold": 1000,
+                    "resize_factor": 1.2
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "metadata": null,
+      "dimension": 384,
+      "tenant": "default_tenant",
+      "database": "default_database",
+      "log_position": 0,
+      "version": 0
+    },
+    {
+      "id": "ec822c45-c9f4-4e5d-a8ad-6f5a42784b1a",
+      "name": "ddl",
+      "configuration_json": {
+        "hnsw": {
+          "space": "l2",
+          "ef_construction": 100,
+          "ef_search": 100,
+          "max_neighbors": 16,
+          "resize_factor": 1.2,
+          "sync_threshold": 1000
+        },
+        "spann": null,
+        "embedding_function": {
+          "type": "known",
+          "name": "default",
+          "config": {
+          }
+        }
+      },
+      "schema": {
+        "defaults": {
+          "string": {
+            "fts_index": {
+              "enabled": false,
+              "config": {
+              }
+            },
+            "string_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          },
+          "float_list": {
+            "vector_index": {
+              "enabled": false,
+              "config": {
+                "space": "l2",
+                "embedding_function": {
+                  "type": "known",
+                  "name": "default",
+                  "config": {
+                  }
+                },
+                "hnsw": {
+                  "ef_construction": 100,
+                  "max_neighbors": 16,
+                  "ef_search": 100,
+                  "num_threads": 14,
+                  "batch_size": 100,
+                  "sync_threshold": 1000,
+                  "resize_factor": 1.2
+                }
+              }
+            }
+          },
+          "sparse_vector": {
+            "sparse_vector_index": {
+              "enabled": false,
+              "config": {
+                "embedding_function": {
+                  "type": "unknown"
+                },
+                "bm25": false
+              }
+            }
+          },
+          "int": {
+            "int_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          },
+          "float": {
+            "float_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          },
+          "bool": {
+            "bool_inverted_index": {
+              "enabled": true,
+              "config": {
+              }
+            }
+          }
+        },
+        "keys": {
+          "#embedding": {
+            "float_list": {
+              "vector_index": {
+                "enabled": true,
+                "config": {
+                  "space": "l2",
+                  "embedding_function": {
+                    "type": "known",
+                    "name": "default",
+                    "config": {
+                    }
+                  },
+                  "source_key": "#document",
+                  "hnsw": {
+                    "ef_construction": 100,
+                    "max_neighbors": 16,
+                    "ef_search": 100,
+                    "num_threads": 14,
+                    "batch_size": 100,
+                    "sync_threshold": 1000,
+                    "resize_factor": 1.2
+                  }
+                }
+              }
+            }
+          },
+          "#document": {
+            "string": {
+              "fts_index": {
+                "enabled": true,
+                "config": {
+                }
+              },
+              "string_inverted_index": {
+                "enabled": false,
+                "config": {
+                }
+              }
+            }
+          }
+        }
+      },
+      "metadata": null,
+      "dimension": 384,
+      "tenant": "default_tenant",
+      "database": "default_database",
+      "log_position": 0,
+      "version": 0
+    }
+  ]
+}

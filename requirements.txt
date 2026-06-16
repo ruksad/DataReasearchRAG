@@ -11,6 +11,6 @@ langchain-anthropic>=0.3
 langchain-openai>=0.3
 
 
-#vanna for qureis
-vanna>=0.7
+# Vanna Text-to-SQL (v2+ is a different product — pin to 0.7.x)
+vanna==0.7.9
 chromadb>=0.5

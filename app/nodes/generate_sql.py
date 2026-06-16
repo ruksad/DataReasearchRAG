@@ -1,37 +1,33 @@
-from langchain_core.messages import SystemMessage, HumanMessage
-from app.llm import get_llm
-from app.schema import SCHEMA_CONTEXT
+import re
+import contextlib
+import io
+from app.vanna_setup import get_vanna
 from app.graph_state import AgentState
 
-_SYSTEM = f"""You are a SQL expert for MS SQL Server. Generate a single valid T-SQL SELECT query.
+_vn = get_vanna()
+_FENCE = re.compile(r"^```(?:sql)?\s*|\s*```$", re.IGNORECASE | re.MULTILINE) # to make only raw sql no text in it
 
-Schema:
-{SCHEMA_CONTEXT}
 
-Rules:
-- Return ONLY the raw SQL — no markdown, no code fences, no explanation.
-- Use only SELECT statements. Never use INSERT, UPDATE, DELETE, DROP, ALTER, EXEC, MERGE, or TRUNCATE.
-- Always filter Open=1 when aggregating Sales to exclude closed-day zeros.
-- Use TOP 100 when retrieving row samples; omit TOP for aggregations.
-- All string literals use single quotes."""
-
-_llm = get_llm()
+def _call_vanna(question: str) -> str:
+    """Call vanna.generate_sql() silencing its stdout debug prints."""
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf): # to keep verbose output in buf, this keeps console clean
+        sql = _vn.generate_sql(question)
+    return _FENCE.sub("", sql).strip()
 
 
 def generate_sql(state: AgentState) -> dict:
     if state.get("error") and state.get("attempts", 0) > 0:
-        user_content = (
-            f"Question: {state['question']}\n\n"
-            f"Previous SQL that failed:\n{state['sql']}\n\n"
-            f"Error returned by the database:\n{state['error']}\n\n"
-            "Fix the SQL so it runs correctly. Return only the corrected SQL."
+        question = (
+            f"{state['question']}\n\n"
+            f"Previous SQL failed:\n{state['sql']}\n"
+            f"Database error: {state['error']}\n"
+            "Fix the SQL and return only the corrected query."
         )
     else:
-        user_content = f"Question: {state['question']}"
+        question = state["question"]
 
-    messages = [SystemMessage(content=_SYSTEM), HumanMessage(content=user_content)]
-    response = _llm.invoke(messages)
-    sql = response.content.strip().strip("```sql").strip("```").strip()
+    sql = _call_vanna(question)
 
     return {
         "sql": sql,

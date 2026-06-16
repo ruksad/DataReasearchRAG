@@ -81,3 +81,25 @@ Rows returned: 1
 
 Answer:
 Store 262 never participated in a promotion, had a school holiday, and achieved the maximum sales of 38,367.
+
+[with vanna]
+Question: Which store never participated in promo and had school holiday but did maximum sales
+────────────────────────────────────────────────────────────
+SQL:
+SELECT TOP 1 t.Store, SUM(t.Sales) AS TotalSales
+FROM dbo.Train t
+JOIN dbo.Store s ON t.Store = s.Store
+WHERE t.Promo = 0 AND t.SchoolHoliday = 1 AND t.[Open] = 1
+GROUP BY t.Store
+ORDER BY TotalSales DESC
+
+Rows returned: 1
+[
+  {
+    "Store": 562,
+    "TotalSales": 2223264.0
+  }
+]
+
+Answer:
+Store 562 never participated in a promotion, had school holidays, and achieved the maximum sales of 2,223,264.
