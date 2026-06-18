@@ -1,12 +1,25 @@
 import sys
+import uuid
 import json
 from app.graph import graph
 
 
-def run(question: str) -> None:
+def _new_session() -> str:
+    return str(uuid.uuid4())
+
+
+def run(question: str, history: list[dict] | None = None, session_id: str | None = None) -> dict:
+    """Run one turn and return the full result state."""
     print(f"\nQuestion: {question}\n{'─' * 60}")
 
-    result = graph.invoke({"question": question, "attempts": 0, "rows": [], "error": ""})
+    result = graph.invoke({
+        "question": question,
+        "attempts": 0,
+        "rows": [],
+        "error": "",
+        "history": history or [],
+        "session_id": session_id or _new_session(),
+    })
 
     print(f"SQL:\n{result.get('sql', 'N/A')}\n")
     rows = result.get("rows", [])
@@ -15,7 +28,36 @@ def run(question: str) -> None:
         print(json.dumps(rows[:5], indent=2, default=str))
     print(f"\nAnswer:\n{result.get('answer', 'N/A')}")
 
+    return result
+
+
+def chat() -> None:
+    """Interactive multi-turn session — history and session_id are carried across questions."""
+    session_id = _new_session()
+    print("DataResearchRAG — conversational analytics")
+    print(f"Session: {session_id}")
+    print("Type your question and press Enter. Type 'exit' or Ctrl-C to quit.\n")
+
+    history: list[dict] = []
+    while True:
+        try:
+            question = input("You: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nGoodbye.")
+            break
+
+        if not question:
+            continue
+        if question.lower() in {"exit", "quit", "q"}:
+            print("Goodbye.")
+            break
+
+        result = run(question, history=history, session_id=session_id)
+        history = result.get("history") or history
+
 
 if __name__ == "__main__":
-    question = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "What are the top 5 stores by total sales?"
-    run(question)
+    if len(sys.argv) > 1:
+        run(" ".join(sys.argv[1:]))
+    else:
+        chat()

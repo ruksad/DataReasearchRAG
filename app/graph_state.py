@@ -8,3 +8,5 @@ class AgentState(TypedDict, total=False):
     error: str
     answer: str
     attempts: int
+    history: list[dict]   # [{question, sql, answer}, ...] capped at MAX_HISTORY_TURNS
+    session_id: str       # UUID generated once per CLI session; used to group turns in dbo.Conversations

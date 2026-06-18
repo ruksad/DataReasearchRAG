@@ -20,6 +20,10 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # One-shot init container — runs on first setup only.
+  # Executes two scripts in order:
+  #   1. load_rossmann.sql  — creates Rossmann DB, dbo.Store, dbo.Train and bulk-loads CSVs
+  #   2. create_conversations.sql — creates dbo.Conversations for persistent session memory
   init-db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver-rossmann-init

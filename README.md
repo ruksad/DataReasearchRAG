@@ -177,7 +177,40 @@ curl -X POST \
 
 ---
 
-## 5. Run the agent
+## 5. Conversation history
+
+Every completed turn is persisted to `dbo.Conversations` in MS SQL automatically — no extra setup needed. The table is created by `init-db` on first run.
+
+**Schema:**
+
+```sql
+dbo.Conversations (Id, SessionId, TurnOrder, Question, SqlQuery, Answer, [RowCount], CreatedAt)
+```
+
+Each CLI session gets a UUID `SessionId` printed at startup. Query a session in DBeaver or sqlcmd:
+
+```sql
+-- All turns in a session
+SELECT TurnOrder, Question, LEFT(Answer, 120) AS Answer, [RowCount], CreatedAt
+FROM dbo.Conversations
+WHERE SessionId = '<uuid-from-console>'
+ORDER BY TurnOrder;
+
+-- Latest 10 turns across all sessions
+SELECT TOP 10 SessionId, TurnOrder, LEFT(Question, 60) AS Question, CreatedAt
+FROM dbo.Conversations ORDER BY CreatedAt DESC;
+```
+
+> **Existing installs:** if you ran `init-db` before this feature was added, create the table manually:
+> ```bash
+> docker exec -i sqlserver-rossmann /opt/mssql-tools18/bin/sqlcmd \
+>   -S localhost -U sa -P 'Rossmann@13June' -C \
+>   -i rossmann-store-sales/init/create_conversations.sql
+> ```
+
+---
+
+## 6. Run the agent
 
 ```bash
 # From the repo root
@@ -216,13 +249,14 @@ app/
   db.py              # SQLAlchemy engine + query runner
   schema.py          # DDL context (fallback, not used when Vanna is active)
   vanna_setup.py     # Vanna factory — ChromaDB + LLM provider mixin
-  graph_state.py     # LangGraph AgentState
+  memory.py          # persist_turn() → dbo.Conversations
+  graph_state.py     # LangGraph AgentState (question, sql, rows, history, session_id, …)
   graph.py           # LangGraph graph (nodes + edges)
   nodes/
-    generate_sql.py  # Vanna → T-SQL (repair-aware, stdout suppressed)
+    generate_sql.py  # Vanna → T-SQL (history-aware, repair-aware)
     validate_sql.py  # SELECT-only guardrail + TOP injection
     execute.py       # runs SQL against MS SQL
-    synthesize.py    # LLM → grounded answer
+    synthesize.py    # LLM → grounded answer; persists turn to dbo.Conversations
 training/
   ddl.sql            # table DDL loaded into ChromaDB
   glossary.md        # business term definitions loaded into ChromaDB
@@ -231,7 +265,10 @@ training/
 chroma_db/           # ChromaDB vector store (local, gitignored)
 rossmann-store-sales/
   docker-compose.yml
-  init/              # SQL init scripts + shell loader
+  init/
+    load_rossmann.sql         # creates Rossmann DB, dbo.Store, dbo.Train; bulk-loads CSVs
+    create_conversations.sql  # creates dbo.Conversations (idempotent)
+    init.sh                   # runs both scripts in order
   *.csv              # Rossmann dataset files
 main.py              # CLI entry point
 requirements.txt

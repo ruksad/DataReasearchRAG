@@ -32,3 +32,4 @@ MSSQL_DATABASE: str = os.getenv("MSSQL_DATABASE", "Rossmann")
 SQL_MAX_ROWS: int = 1000
 SQL_TIMEOUT_SECONDS: int = 15
 MAX_REPAIR_ATTEMPTS: int = 2
+MAX_HISTORY_TURNS: int = 5  # number of past turns kept in-context
