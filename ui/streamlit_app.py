@@ -1,3 +1,4 @@
+import os
 import uuid
 import httpx
 import streamlit as st
@@ -66,7 +67,8 @@ with st.sidebar:
     st.title("📊 DataResearchRAG")
     st.caption("Conversational analytics over Rossmann Store Sales")
 
-    api_url = st.text_input("API URL", value="http://localhost:8000")
+    _default_api_url = os.getenv("API_URL", "http://localhost:8000")
+    api_url = st.text_input("API URL", value=_default_api_url)
 
     st.divider()
 

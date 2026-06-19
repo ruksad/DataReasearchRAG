@@ -1,0 +1,25 @@
+# Never bake secrets or local state into the image
+.env
+chroma_db/
+
+# Large raw data files (mounted into sqlserver container separately)
+rossmann-store-sales/train.csv
+rossmann-store-sales/test.csv
+rossmann-store-sales/store.csv
+rossmann-store-sales/sample_submission.csv
+
+# Python artefacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+
+# Git / IDE
+.git/
+.gitignore
+.DS_Store
+.idea/
+*.pid

@@ -1,0 +1,127 @@
+# Full-stack deployment.
+#
+# Profiles:
+#   (none)  — sqlserver, api, ui  (always-running services)
+#   init    — init-db              (one-shot: first run only)
+#   train   — train               (one-shot: re-run when training/ changes)
+#
+# Ollama + Gemma run on the host and are reached via host.docker.internal.
+# On Linux, extra_hosts maps host.docker.internal → the Docker bridge gateway.
+#
+# Usage:
+#   docker compose up -d sqlserver
+#   docker compose --profile init  run --rm init-db
+#   docker compose --profile train run --rm train
+#   docker compose up -d api ui
+
+services:
+
+  # ── MS SQL Server ───────────────────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-rossmann
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Rossmann@13June"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+      - ./rossmann-store-sales/store.csv:/tmp/store.csv:ro
+      - ./rossmann-store-sales/train.csv:/tmp/train.csv:ro
+      - ./rossmann-store-sales/init:/init:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $$MSSQL_SA_PASSWORD -C -Q 'SELECT 1' || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+  # ── One-shot DB init (run once after first db-up) ──────────────────────────
+  init-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-rossmann-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: "Rossmann@13June"
+    volumes:
+      - ./rossmann-store-sales/init:/init:ro
+    entrypoint: ["/bin/bash", "/init/init.sh"]
+    restart: "no"
+    profiles: ["init"]
+
+  # ── One-shot Vanna training (run once, re-run when training/ changes) ──────
+  # Training only writes embeddings to ChromaDB — no SQL generation happens.
+  # However, Vanna's Ollama __init__ calls ollama_client.list() immediately to
+  # check/pull the model, so Ollama must be reachable even during training.
+  train:
+    build: .
+    image: rossmann-app
+    container_name: rossmann-train
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # Linux: resolve host from inside container
+    volumes:
+      - ./chroma_db:/app/chroma_db
+    command: python training/train.py
+    restart: "no"
+    profiles: ["train"]
+
+  # ── FastAPI backend ─────────────────────────────────────────────────────────
+  api:
+    build: .
+    image: rossmann-app
+    container_name: rossmann-api
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      MSSQL_HOST: sqlserver
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./chroma_db:/app/chroma_db
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Streamlit UI ────────────────────────────────────────────────────────────
+  ui:
+    build: .
+    image: rossmann-app
+    container_name: rossmann-ui
+    environment:
+      # API_URL is used by the Streamlit Python process (server-side httpx calls).
+      # The api container is reachable by its service name inside the Docker network.
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    command: >
+      streamlit run ui/streamlit_app.py
+      --server.port 8501
+      --server.address 0.0.0.0
+    restart: unless-stopped
+
+volumes:
+  mssql_data:

@@ -2,6 +2,11 @@
 One-time script to load DDL, glossary, and Q→SQL examples into ChromaDB.
 Re-run to add new examples; existing entries are deduplicated by Vanna.
 
+Training only writes embeddings to ChromaDB — no SQL generation happens.
+However, Vanna's Ollama __init__ calls ollama_client.list() immediately to
+check/pull the model, so the LLM provider must be reachable at startup even
+though it is never used during the actual training calls.
+
 Usage:
     python training/train.py
 """
