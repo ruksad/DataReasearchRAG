@@ -2,16 +2,20 @@ import logging
 import time
 import uuid
 
+# setup_logging must run before any other app import — module-level code in
+# synthesize.py calls get_llm() and vanna_setup.py calls get_vanna() at import
+# time, so the handler must exist before those modules are loaded.
+from app import config
+from app.logging_config import setup_logging
+setup_logging(config.LOG_LEVEL)
+
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from app import config
-from app.logging_config import setup_logging
 from app.graph import graph
 from app.db import get_engine
 
-setup_logging(config.LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="DataResearchRAG", version="1.0")

@@ -3,9 +3,9 @@ import uuid
 import json
 from app import config
 from app.logging_config import setup_logging
-from app.graph import graph
+setup_logging(config.LOG_LEVEL)  # must run before app.graph triggers module-level get_llm()
 
-setup_logging(config.LOG_LEVEL)
+from app.graph import graph
 
 
 def _new_session() -> str:

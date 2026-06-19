@@ -3,6 +3,7 @@ API_PORT  ?= 8000
 UI_PORT   ?= 8501
 LOG_LEVEL ?= INFO
 LLM_PROVIDER ?= ollama
+ANTHROPIC_API_KEY ?= someKey
 DB_DIR    := rossmann-store-sales
 
 # Internal files used to track background PIDs
@@ -99,7 +100,7 @@ train:
 
 # ── Application ───────────────────────────────────────────────────────────────
 api:
-	LOG_LEVEL=$(LOG_LEVEL) LLM_PROVIDER=$(LLM_PROVIDER) uvicorn app.api:app \
+	LOG_LEVEL=$(LOG_LEVEL) LLM_PROVIDER=$(LLM_PROVIDER)  ANTHROPIC_API_KEY=$(ANTHROPIC_API_KEY) uvicorn app.api:app \
 	  --host 0.0.0.0 --port $(API_PORT) --reload
 
 ui:
