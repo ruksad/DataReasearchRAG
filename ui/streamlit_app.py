@@ -17,7 +17,7 @@ def _post_feedback(api_url: str, session_id: str, turn_order: int, rating: int) 
         httpx.post(
             f"{api_url}/feedback",
             json={"session_id": session_id, "turn_order": turn_order, "rating": rating},
-            timeout=5,
+            timeout=50,
         )
     except Exception:
         pass
@@ -117,7 +117,7 @@ if prompt := st.chat_input("Ask a question about Rossmann store sales…"):
                         "session_id": session_id,
                         "history": st.session_state["history"],
                     },
-                    timeout=120,
+                    timeout=1200,
                 )
                 resp.raise_for_status()
                 data = resp.json()
