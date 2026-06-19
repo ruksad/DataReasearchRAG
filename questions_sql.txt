@@ -103,3 +103,21 @@ Rows returned: 1
 
 Answer:
 Store 562 never participated in a promotion, had school holidays, and achieved the maximum sales of 2,223,264.
+
+
+
+Question: which store does most sales, whose competitor are above  44320.0 meters.
+────────────────────────────────────────────────────────────
+SQL:
+SELECT TOP 1 t.Store, SUM(t.Sales) AS TotalSales FROM dbo.Train t JOIN dbo.Store s ON t.Store = s.Store WHERE t.[Open] = 1 AND s.CompetitionDistance > 44320.0 GROUP BY t.Store ORDER BY TotalSales DESC
+
+Rows returned: 1
+[
+  {
+    "Store": 453,
+    "TotalSales": 6896821.0
+  }
+]
+
+Answer:
+Store 453 has the highest sales, totaling 6,896,821.0, among stores whose competitors are more than 44,320.0 meters away.

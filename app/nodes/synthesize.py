@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.llm import get_llm
 from app.graph_state import AgentState
@@ -11,18 +12,34 @@ and the result rows as JSON.
 
 Rules:
 - Write 1–3 sentences.
-- Use ONLY numbers present in the result rows. Never invent figures.
-- If the rows don't answer the question, say so plainly.
+- Use ONLY numbers from the result rows. Quote them exactly — do not round or restate.
+- If a figure appears in your answer it must be present in the provided rows JSON.
+- If the rows do not answer the question, say so plainly. Do not guess.
 - If prior turns are provided, you may reference them for context (e.g. "Compared to the previous result...").
 - Do not repeat the SQL in your answer."""
 
 _llm = get_llm()
 
 
+def _build_citation(state: AgentState) -> dict:
+    rows = state.get("rows") or []
+    columns = list(rows[0].keys()) if rows else []
+    return {
+        "sql": state.get("sql", ""),
+        "columns": columns,
+        "row_count": len(rows),
+        "sample_rows": rows[:5],
+        "executed_at": datetime.now(timezone.utc).isoformat(),
+        "source": f"MS SQL · {config.MSSQL_DATABASE}",
+    }
+
+
 def synthesize(state: AgentState) -> dict:
     if state.get("error") and not state.get("rows"):
         answer = f"I was unable to answer that question. Error: {state['error']}"
-        return {"answer": answer}
+        return {"answer": answer, "citation": {}}
+
+    citation = _build_citation(state)
 
     history = state.get("history") or []
     history_text = ""
@@ -53,11 +70,11 @@ def synthesize(state: AgentState) -> dict:
         question=state["question"],
         sql=state["sql"],
         answer=answer,
-        row_count=len(state["rows"]),
+        row_count=citation["row_count"],
     )
 
     # Append to in-context history (capped at MAX_HISTORY_TURNS)
     new_turn = {"question": state["question"], "sql": state["sql"], "answer": answer}
     updated_history = (history + [new_turn])[-config.MAX_HISTORY_TURNS:]
 
-    return {"answer": answer, "history": updated_history}
+    return {"answer": answer, "citation": citation, "history": updated_history}

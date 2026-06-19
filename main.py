@@ -8,6 +8,19 @@ def _new_session() -> str:
     return str(uuid.uuid4())
 
 
+def _print_citation(citation: dict) -> None:
+    if not citation:
+        return
+    cols = ", ".join(citation.get("columns", []))
+    sql_oneline = " ".join(citation.get("sql", "").split())
+    print(f"\n{'─' * 2} Citation {'─' * 49}")
+    print(f"Source   : {citation.get('source', '')}")
+    print(f"Executed : {citation.get('executed_at', '')}")
+    print(f"Rows     : {citation.get('row_count', 0)}  |  Columns: {cols}")
+    print(f"SQL      : {sql_oneline}")
+    print(f"{'─' * 60}")
+
+
 def run(question: str, history: list[dict] | None = None, session_id: str | None = None) -> dict:
     """Run one turn and return the full result state."""
     print(f"\nQuestion: {question}\n{'─' * 60}")
@@ -27,6 +40,7 @@ def run(question: str, history: list[dict] | None = None, session_id: str | None
     if rows:
         print(json.dumps(rows[:5], indent=2, default=str))
     print(f"\nAnswer:\n{result.get('answer', 'N/A')}")
+    _print_citation(result.get("citation") or {})
 
     return result
 
