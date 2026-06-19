@@ -1,10 +1,15 @@
 import json
+import logging
+import time
 from datetime import datetime, timezone
+
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.llm import get_llm
 from app.graph_state import AgentState
 from app.memory import persist_turn
 from app import config
+
+logger = logging.getLogger(__name__)
 
 _SYSTEM = """You are a data analyst writing a concise insight for a business director.
 You will be given the conversation history, the current question, the SQL that was run,
@@ -36,12 +41,13 @@ def _build_citation(state: AgentState) -> dict:
 
 def synthesize(state: AgentState) -> dict:
     if state.get("error") and not state.get("rows"):
+        logger.warning("synthesize — returning error answer: %s", state["error"])
         answer = f"I was unable to answer that question. Error: {state['error']}"
         return {"answer": answer, "citation": {}}
 
     citation = _build_citation(state)
-
     history = state.get("history") or []
+
     history_text = ""
     if history:
         lines = ["Prior conversation:"]
@@ -59,11 +65,14 @@ def synthesize(state: AgentState) -> dict:
         f"{json.dumps(rows_preview, indent=2, default=str)}"
     )
 
+    logger.info("synthesize — calling LLM (rows=%d, history_turns=%d)", citation["row_count"], len(history))
+    t0 = time.perf_counter()
     messages = [SystemMessage(content=_SYSTEM), HumanMessage(content=user_content)]
     response = _llm.invoke(messages)
     answer = response.content.strip()
+    elapsed = (time.perf_counter() - t0) * 1000
+    logger.info("synthesize — LLM responded in %.1f ms | answer: %s", elapsed, answer[:100])
 
-    # Persist this turn to dbo.Conversations
     persist_turn(
         session_id=state.get("session_id", "unknown"),
         turn_order=len(history),
@@ -73,7 +82,6 @@ def synthesize(state: AgentState) -> dict:
         row_count=citation["row_count"],
     )
 
-    # Append to in-context history (capped at MAX_HISTORY_TURNS)
     new_turn = {"question": state["question"], "sql": state["sql"], "answer": answer}
     updated_history = (history + [new_turn])[-config.MAX_HISTORY_TURNS:]
 

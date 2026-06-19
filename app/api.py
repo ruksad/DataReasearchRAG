@@ -1,12 +1,31 @@
+import logging
+import time
 import uuid
-from fastapi import FastAPI, HTTPException
+
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from app import config
+from app.logging_config import setup_logging
 from app.graph import graph
 from app.db import get_engine
 
+setup_logging(config.LOG_LEVEL)
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="DataResearchRAG", version="1.0")
+
+
+# ── Request timing middleware ─────────────────────────────────────────────────
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    t0 = time.perf_counter()
+    response = await call_next(request)
+    elapsed = (time.perf_counter() - t0) * 1000
+    logger.info("%s %s → %d  (%.1f ms)", request.method, request.url.path, response.status_code, elapsed)
+    return response
 
 
 # ── Request / Response models ─────────────────────────────────────────────────
@@ -42,7 +61,9 @@ def health():
 @app.post("/ask", response_model=AskResponse)
 def ask(req: AskRequest):
     session_id = req.session_id or str(uuid.uuid4())
+    logger.info("ask — session=%s | question: %s", session_id[:8], req.question[:100])
 
+    t0 = time.perf_counter()
     result = graph.invoke({
         "question": req.question,
         "attempts": 0,
@@ -51,6 +72,9 @@ def ask(req: AskRequest):
         "history": req.history,
         "session_id": session_id,
     })
+    elapsed = (time.perf_counter() - t0) * 1000
+    logger.info("ask — done in %.1f ms | rows=%d | session=%s",
+                elapsed, len(result.get("rows") or []), session_id[:8])
 
     return AskResponse(
         answer=result.get("answer", ""),
@@ -79,9 +103,12 @@ def feedback(req: FeedbackRequest):
                 {"rating": req.rating, "session_id": req.session_id, "turn_order": req.turn_order},
             ).rowcount
     except Exception as exc:
+        logger.error("feedback — DB error: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))
 
     if rows_affected == 0:
         raise HTTPException(status_code=404, detail="Turn not found")
 
+    logger.info("feedback — session=%s turn=%d rating=%+d",
+                req.session_id[:8], req.turn_order, req.rating)
     return {"status": "ok", "rating": req.rating}

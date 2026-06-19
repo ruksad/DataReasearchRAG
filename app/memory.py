@@ -1,5 +1,9 @@
+import logging
+
 from sqlalchemy import text
 from app.db import get_engine
+
+logger = logging.getLogger(__name__)
 
 
 def persist_turn(
@@ -32,5 +36,6 @@ def persist_turn(
                     "row_count": row_count,
                 },
             )
+        logger.debug("memory — persisted turn %d for session %s", turn_order, session_id[:8])
     except Exception as exc:
-        print(f"[memory] Failed to persist turn: {exc}")
+        logger.warning("memory — failed to persist turn: %s", exc)

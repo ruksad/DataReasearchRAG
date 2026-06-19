@@ -1,15 +1,19 @@
+import logging
 import re
+
 from vanna.chromadb import ChromaDB_VectorStore
 from app import config
+
+logger = logging.getLogger(__name__)
 
 _CHROMA_PATH = "chroma_db"
 _vanna_instance = None
 
 # Matches a SELECT/WITH/CREATE statement that spans to end-of-string (no semicolon required)
 _SQL_RE = re.compile(
-    r"(?:```(?:sql)?\s*)?"           # optional opening fence
-    r"((?:SELECT|WITH|CREATE\s+TABLE)\b.*?)"  # the SQL
-    r"(?:;?\s*```|;?\s*$)",          # optional closing fence or end-of-string
+    r"(?:```(?:sql)?\s*)?"
+    r"((?:SELECT|WITH|CREATE\s+TABLE)\b.*?)"
+    r"(?:;?\s*```|;?\s*$)",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -25,11 +29,13 @@ def _extract_sql(llm_response: str) -> str:
     match = _SQL_RE.search(llm_response)
     if match:
         return match.group(1).strip().rstrip(";").strip()
+    logger.warning("extract_sql: no SQL pattern matched — returning raw response")
     return llm_response.strip()
 
 
 def _make_vanna():
     provider = config.LLM_PROVIDER.lower()
+    logger.info("Initialising Vanna with provider=%s", provider)
 
     if provider == "ollama":
         from vanna.ollama import Ollama
@@ -90,4 +96,5 @@ def get_vanna():
     global _vanna_instance
     if _vanna_instance is None:
         _vanna_instance = _make_vanna()
+        logger.info("Vanna instance ready (ChromaDB at %s)", _CHROMA_PATH)
     return _vanna_instance

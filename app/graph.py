@@ -1,3 +1,5 @@
+import logging
+
 from langgraph.graph import StateGraph, END
 from app.graph_state import AgentState
 from app.nodes.generate_sql import generate_sql
@@ -6,10 +8,14 @@ from app.nodes.execute import execute
 from app.nodes.synthesize import synthesize
 from app import config
 
+logger = logging.getLogger(__name__)
+
 
 def _route_after_execute(state: AgentState) -> str:
     """Retry SQL generation on error, up to MAX_REPAIR_ATTEMPTS total."""
     if state.get("error") and state.get("attempts", 0) < config.MAX_REPAIR_ATTEMPTS:
+        logger.info("graph — routing to repair (attempt %d/%d, error: %s)",
+                    state.get("attempts", 0), config.MAX_REPAIR_ATTEMPTS, state["error"][:60])
         return "generate_sql"
     return "synthesize"
 
@@ -31,6 +37,7 @@ def build_graph() -> StateGraph:
     })
     builder.add_edge("synthesize", END)
 
+    logger.debug("graph — compiled")
     return builder.compile()
 
 

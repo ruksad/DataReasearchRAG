@@ -1,7 +1,11 @@
 import sys
 import uuid
 import json
+from app import config
+from app.logging_config import setup_logging
 from app.graph import graph
+
+setup_logging(config.LOG_LEVEL)
 
 
 def _new_session() -> str:

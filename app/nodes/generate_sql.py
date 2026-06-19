@@ -1,8 +1,13 @@
-import re
 import contextlib
 import io
+import logging
+import re
+import time
+
 from app.vanna_setup import get_vanna
 from app.graph_state import AgentState
+
+logger = logging.getLogger(__name__)
 
 _vn = get_vanna()
 _FENCE = re.compile(r"^```(?:sql)?\s*|\s*```$", re.IGNORECASE | re.MULTILINE)
@@ -40,9 +45,20 @@ def _build_question(state: AgentState) -> str:
 
 
 def generate_sql(state: AgentState) -> dict:
+    attempt = state.get("attempts", 0) + 1
+    is_repair = bool(state.get("error") and attempt > 1)
+    label = f"repair attempt {attempt}" if is_repair else f"attempt {attempt}"
+    logger.info("generate_sql — %s | question: %s", label, state["question"][:80])
+
+    t0 = time.perf_counter()
     sql = _call_vanna(_build_question(state))
+    elapsed = (time.perf_counter() - t0) * 1000
+
+    sql_preview = sql.replace("\n", " ")[:120]
+    logger.info("generate_sql — done in %.1f ms | sql: %s", elapsed, sql_preview)
+
     return {
         "sql": sql,
         "error": "",
-        "attempts": state.get("attempts", 0) + 1,
+        "attempts": attempt,
     }
