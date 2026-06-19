@@ -1,11 +1,12 @@
 from langchain_core.language_models import BaseChatModel
 from app import config
+import logging
 
-
+logger= logging.getLogger(__name__)
 def get_llm() -> BaseChatModel:
     """Return a chat model for the configured LLM_PROVIDER."""
     provider = config.LLM_PROVIDER.lower()
-
+    logger.info(f"LLM PROVIDER: {provider}")
     if provider == "ollama":
         from langchain_ollama import ChatOllama
         return ChatOllama(

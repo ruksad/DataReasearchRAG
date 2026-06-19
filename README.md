@@ -210,13 +210,51 @@ FROM dbo.Conversations ORDER BY CreatedAt DESC;
 
 ---
 
-## 6. Run the agent
+## 6. Run the application
+
+### Option A — Web UI (recommended)
+
+Two terminal windows, both from the repo root:
 
 ```bash
-# From the repo root
+# Terminal 1 — FastAPI backend (port 8000)
+uvicorn app.api:app --host 0.0.0.0 --port 8000 --reload
+
+# Terminal 2 — Streamlit frontend (port 8501)
+streamlit run ui/streamlit_app.py
+```
+
+Then open **http://localhost:8501** in your browser.
+
+The sidebar lets you configure the API URL (default `http://localhost:8000`), start a new session, and see sample questions. Each answer shows an expandable SQL block, result table, and citation. Use 👍/👎 to rate any answer — the rating is stored in `dbo.Conversations.Rating`.
+
+**Verify the API is up:**
+
+```bash
+curl http://localhost:8000/health
+# {"status":"ok"}
+```
+
+**Ask a question directly via the API:**
+
+```bash
+curl -s -X POST http://localhost:8000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Top 5 stores by total sales"}' | python -m json.tool
+```
+
+---
+
+### Option B — CLI (single question or interactive chat)
+
+```bash
+# Single question
 python main.py "What are the top 5 stores by total sales?"
 python main.py "Which day of the week has the highest average sales?"
 python main.py "How does promo affect sales across different store types?"
+
+# Interactive multi-turn chat (carries history across questions)
+python main.py
 ```
 
 **Override the LLM provider inline (without editing ~/.env):**
@@ -226,6 +264,23 @@ LLM_PROVIDER=anthropic ANTHROPIC_API_KEY=sk-ant-... python main.py "Which store 
 LLM_PROVIDER=openai   OPENAI_API_KEY=sk-...       python main.py "Which store type has the highest average sales?"
 LLM_PROVIDER=ollama   OLLAMA_MODEL=llama3.2        python main.py "Which store type has the highest average sales?"
 ```
+
+---
+
+### Logging
+
+All components log to stdout. The default level is `INFO`. To change it:
+
+```bash
+# Verbose (shows SQL previews, Vanna internals, per-query timing)
+LOG_LEVEL=DEBUG uvicorn app.api:app --port 8000 --reload
+LOG_LEVEL=DEBUG python main.py
+
+# Quiet (warnings and errors only)
+LOG_LEVEL=WARNING uvicorn app.api:app --port 8000
+```
+
+Or set `LOG_LEVEL=DEBUG` in `~/.env` to apply it everywhere.
 
 ---
 
@@ -244,19 +299,22 @@ Join: `dbo.Train.Store = dbo.Store.Store`
 
 ```
 app/
-  config.py          # env-based settings
+  config.py          # env-based settings (LLM provider, DB, LOG_LEVEL)
+  logging_config.py  # setup_logging() — called once at startup
   llm.py             # LLM provider factory (ollama / anthropic / openai)
   db.py              # SQLAlchemy engine + query runner
-  schema.py          # DDL context (fallback, not used when Vanna is active)
   vanna_setup.py     # Vanna factory — ChromaDB + LLM provider mixin
   memory.py          # persist_turn() → dbo.Conversations
   graph_state.py     # LangGraph AgentState (question, sql, rows, history, session_id, …)
   graph.py           # LangGraph graph (nodes + edges)
+  api.py             # FastAPI — /health, /ask, /feedback
   nodes/
     generate_sql.py  # Vanna → T-SQL (history-aware, repair-aware)
     validate_sql.py  # SELECT-only guardrail + TOP injection
     execute.py       # runs SQL against MS SQL
     synthesize.py    # LLM → grounded answer; persists turn to dbo.Conversations
+ui/
+  streamlit_app.py   # Streamlit chat UI — wired to FastAPI /ask and /feedback
 training/
   ddl.sql            # table DDL loaded into ChromaDB
   glossary.md        # business term definitions loaded into ChromaDB
