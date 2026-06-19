@@ -14,3 +14,9 @@ langchain-openai>=0.3
 # Vanna Text-to-SQL (v2+ is a different product — pin to 0.7.x)
 vanna==0.7.9
 chromadb>=0.5
+
+# API + UI  (fastapi>=0.116 required: starlette>=0.40 compatibility with streamlit)
+fastapi>=0.116
+uvicorn>=0.30
+httpx>=0.27
+streamlit>=1.35

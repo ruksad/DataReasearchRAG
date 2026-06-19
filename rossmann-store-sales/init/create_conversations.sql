@@ -11,6 +11,7 @@ BEGIN
         SqlQuery    NVARCHAR(MAX)      NULL,
         Answer      NVARCHAR(MAX)      NULL,
         [RowCount]  INT                NULL,
+        Rating      INT                NULL,      -- 1 = thumbs up, -1 = thumbs down, NULL = no feedback
         CreatedAt   DATETIME           NOT NULL DEFAULT GETDATE()
     );
 
